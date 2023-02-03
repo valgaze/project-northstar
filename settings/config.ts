@@ -47,7 +47,6 @@ CultureBot.fuzzy(
     ];
 
     const luckyImage = $bot.pickRandom(rosterImages);
-    $bot.send(`Bad file: ${luckyImage}`);
     const card = $bot
       .card({
         title: "Project Northstar 🌟",
@@ -336,19 +335,6 @@ CultureBot.fuzzy(["help", "how do i"], ($bot, msg) => {
 
   $bot.send(card);
 });
-
-// Special Handlers
-/*
-CultureBot.nlu(async ($bot, msg, api) => {
-  const res = await api(
-    "https://www.nluservice.com",
-    { data: msg.text },
-    { method: "GET" }
-  );
-  const json = await res.text();
-  console.log("##", json);
-});
-*/
 
 // onSubmit
 CultureBot.onSubmit(($bot, msg) => {
