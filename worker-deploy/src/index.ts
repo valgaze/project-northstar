@@ -3,6 +3,9 @@ import {
   LocationGenerator,
   locationHandler,
 } from "./../../settings/location.handler";
+
+import { enrichDataHandler } from "./../../settings/enrichdata.handler";
+
 import { Guard } from "./mini-router";
 import { validateWebhook } from "./validateWebhook";
 import { ENVELOPES, finale, BotInst } from "speedybot-mini";
@@ -28,6 +31,63 @@ export default {
     const urlRef = new URL(request.url);
     const { pathname } = urlRef;
     const hooks = {
+      "/enrich-data": async (
+        request: Request,
+        env: Env,
+        ctx: ExecutionContext
+      ) => {
+        if (request.method.toLowerCase() !== "post") {
+          return new Response("You may only POST to this endpoint");
+        }
+        const urlRef = new URL(request.url);
+        const { searchParams } = urlRef;
+
+        const roomId = searchParams.get("roomId") || null;
+        const messageId = searchParams.get("messageId") || null;
+        if (!roomId || !messageId) {
+          return new Response("Missing parameters", { status: 422 });
+        }
+        if (roomId && messageId) {
+          const BotConfig = {
+            roomId: roomId as string,
+            SpeedybotInst: CultureBot,
+            token: env.BOT_TOKEN,
+            url: request.url,
+          };
+
+          const Bot = new BotInst(BotConfig);
+          // Validate this is a request by checking messageId
+          const check = await Bot.deleteMessage(messageId as string);
+          if (check.status === 404) {
+            return new Response("Sorry, that link is no longer valid", {
+              status: 401,
+            });
+          } else {
+            const enrichedDetails = {
+              a: 1,
+              b: 2,
+              c: "placeholder data",
+            };
+
+            // Run handler
+            ctx.waitUntil(
+              new Promise(async (resolve) =>
+                resolve(enrichDataHandler(Bot, enrichedDetails))
+              )
+            );
+            // Page content (disposable)
+            const html = `You can close this window.<script>window.close();window.addEventListener("load", window.close);setTimeout(window.close, 301);</script>`;
+            return new Response(html, {
+              status: 200,
+              headers: {
+                "content-type": "text/html;charset=UTF-8",
+              },
+            });
+          }
+        } else {
+          return new Response(finale());
+        }
+      },
       "/location": async (
         request: Request,
         env: Env,
